@@ -1,5 +1,8 @@
 all: $(patsubst %.p,%.out,$(wildcard *.p))
 
+eqv-axioms.out: eqv-axioms.in
+	mace4 -f $< >$@
+	
 clean:
 	rm -f *.in *.out
 	
