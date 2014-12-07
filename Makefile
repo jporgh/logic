@@ -1,5 +1,10 @@
-.p.in:
-    tptp2ladr < $< > $@
+all: $(patsubst %.p,%.out,$(wildcard *.p))
 
-.in.out:
-    prover9 -f $< > $@
+clean:
+	rm -f *.in *.out
+	
+%.in: %.p
+	tptp_to_ladr < $< > $@
+
+%.out: %.in
+	prover9 -f $< > $@
