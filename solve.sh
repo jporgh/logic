@@ -7,8 +7,9 @@ solve() {
 	input="$1"
 	tmp="$(basename "$1" .p).tmp"
 	output="$(basename "$1" .p).out"
-	[ -f "$output" ] && return 0
+	[ ! -f "$output" -o "$input" -nt "$output" ] || return 0
 	echo "$input"
+	rm -f "$output"
 	if fgrep -qx '%model' "$input"
 	then
 		tptp_to_ladr < "$input" | mace4 -t$TIMEOUT >"$tmp"
