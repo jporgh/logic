@@ -6,7 +6,7 @@ TIMEOUT=30
 solve() {
 	input="$1"
 	tmp="$(basename "$1" .p).tmp"
-	output="$(basename "$1" .p).out"
+	output="results/$(basename "$1" .p).out"
 	[ ! -f "$output" -o "$input" -nt "$output" ] || return 0
 	echo "$input"
 	rm -f "$output"
@@ -19,6 +19,7 @@ solve() {
 	mv "$tmp" "$output"
 }
 
+mkdir -p results
 for a in *.p
 do
 	solve "$a"
