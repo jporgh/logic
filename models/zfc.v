@@ -30,6 +30,11 @@ Proof.
 induction n; auto.
 Qed.
 
+Lemma odd_div_eq : 
+   forall m n : nat, oddb m = oddb n -> div2 m = div2 n -> m = n.
+Proof.
+Qed.
+
 Lemma extensionality : forall m n, (forall x, elem x m = elem x n)
  -> m = n.
 Proof.
