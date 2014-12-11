@@ -289,4 +289,16 @@ generalize (H0 (S x)); simpl; intros.
 trivial.
 Qed.
 
+Definition subseteq (a b : nat) : Prop :=
+  forall x, elem x a = true -> elem x b = true.
+
+Variable power : nat -> nat.
+
+Lemma powerset : forall m n,
+  subseteq m n <-> elem m (power n) = true.
+Proof.
+intros.
+Qed.
+  
+
 End Model.
