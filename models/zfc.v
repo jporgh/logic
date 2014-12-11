@@ -143,51 +143,150 @@ tauto.
 tauto.
 Qed.
 
+Inductive lt : nat -> nat -> Prop :=
+| lt_O : forall n, lt O (S n)
+| lt_S : forall m n, lt m n -> lt (S m) (S n).
+
+Lemma lt_S_le : forall m n,
+  lt m (S n) ->
+  (lt m n \/ m = n).
+Proof.
+intros m n H.
+generalize dependent m.
+induction n; intros m H.
+right.
+inversion_clear H.
+trivial.
+inversion H0.
+inversion_clear H.
+left.
+apply lt_O.
+destruct (IHn m0).
+trivial.
+left.
+apply lt_S.
+trivial.
+subst.
+right.
+trivial.
+Qed.
+
+Lemma nat_lt_ind :
+  forall P : nat -> Prop,
+  (forall m, (forall n, lt n m -> P n) -> P m) ->
+forall n, P n.
+Proof.
+intros P HI n.
+assert (P n /\ (forall m, lt m n -> P m)).
+induction n; split; intros.
+apply HI; intros.
+inversion H.
+inversion H.
+destruct IHn.
+apply HI; intros.
+destruct (lt_S_le n0 n).
+trivial.
+apply H0.
+trivial.
+subst.
+trivial.
+destruct IHn.
+destruct (lt_S_le m n).
+trivial.
+apply H1.
+trivial.
+subst.
+trivial.
+tauto.
+Qed.
+
+Lemma lt_lt_S : forall m n,
+  lt m n ->
+  lt m (S n).
+Proof.
+induction m; intros.
+apply lt_O.
+apply lt_S.
+destruct n.
+inversion H.
+apply IHm.
+inversion_clear H.
+trivial.
+Qed.
+
+Lemma lt_div2 : forall m,
+  lt (div2 (S m)) (S m).
+Proof.
+  intros m.
+  pattern m; apply nat_ind2.
+  simpl.
+apply lt_O.
+simpl.
+apply lt_S.
+apply lt_O.
+intros.
+clear m.
+replace (div2 (S (S (S n))))
+with (S (div2 (S n))).
+apply lt_S.
+apply lt_lt_S.
+trivial.
+auto.
+Qed.
+
 Lemma div2_ind :
  forall P : nat -> Prop,
  P O -> (forall n, P (div2 n) -> P n) -> forall n, P n.
 Proof.
 intros P HO HI n.
-apply nat_ind2; intros.
+apply nat_lt_ind; intros.
+destruct m.
 trivial.
 apply HI.
-simpl.
-trivial.
+apply H.
+apply lt_div2.
 Qed.
 
 Lemma null_extensional : forall m, (forall x, elem x m = false)
  -> m = O.
 Proof.
-intros m H.
-generalize (H O); intros HO.
-simpl in HO.
-apply odd_div_eq.
-simpl.
+refine (div2_ind  _ _ _); intros.
 trivial.
-induction m.
-trivial.
+assert (n=O \/ n=S O \/ div2 n <> O).
+destruct n; auto.
+destruct n; auto.
+right;right.
 simpl.
+discriminate.
+destruct H1 as [H1 | [ H1 | H1 ]].
+auto.
+subst.
+generalize (H0 O); intros.
+simpl in H1.
+discriminate H1.
+destruct H1.
+apply H.
+intros.
+generalize (H0 (S x)); intros.
+simpl in H1.
+trivial.
 Qed.
 
 Lemma extensionality : forall m n, (forall x, elem x m = elem x n)
  -> m = n.
 Proof.
-induction m.
-induction n.
+refine (div2_ind _ _ _); intros.
+symmetry.
+apply null_extensional; intros.
+rewrite <- H.
+apply O_is_emptyset.
+apply odd_div_eq.
+generalize (H0 O); simpl; intros.
 trivial.
+apply H.
 intros.
-induction n;intros.
+generalize (H0 (S x)); simpl; intros.
 trivial.
-double induction m n; intros.
-trivial.
-generalize (H0 O); intros HO.
-simpl in HO.
-trivial.
-assert (forall y, elem (S y) m = elem (S y) n) as HS.
-intros.
-rewrite (H (S y)).
-trivial.
-simpl in HS.
 Qed.
 
 End Model.
