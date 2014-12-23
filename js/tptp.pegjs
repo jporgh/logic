@@ -23,7 +23,7 @@ fof_unitary_formula
   / fof_unary_formula
   / atomic_formula
   / "(" fof_logic_formula ")"
-fof_quantified_formula = fol_quantifier "[" fof_variable_list "]:" fof_unitary_formula
+fof_quantified_formula = fol_quantifier "[" fof_variable_list "]:" ws fof_unitary_formula
 fof_variable_list = variable ( "," variable ) *
 fof_unary_formula
   = unary_connective fof_unitary_formula
@@ -98,6 +98,7 @@ decimal
   = zero_numeric
   / positive_decimal
 positive_decimal = non_zero_numeric numeric *
+ws = [\x20\x0A\0x0D] *
 
 // character classes
 vline = "|"
