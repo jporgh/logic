@@ -24,9 +24,7 @@ fof_unitary_formula
   / atomic_formula
   / "(" fof_logic_formula ")"
 fof_quantified_formula = fol_quantifier "[" fof_variable_list "]:" fof_unitary_formula
-fof_variable_list
-  = variable
-  / variable "," fof_variable_list
+fof_variable_list = variable ( "," variable ) *
 fof_unary_formula
   = unary_connective fof_unitary_formula
   / fol_infix_unary
