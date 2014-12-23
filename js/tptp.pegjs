@@ -16,12 +16,8 @@ fof_binary_nonassoc = fof_unitary_formula binary_connective fof_unitary_formula
 fof_binary_assoc
   = fof_or_formula
   / fof_and_formula
-fof_or_formula
-  = fof_unitary_formula vline fof_unitary_formula
-  / fof_or_formula vline fof_unitary_formula
-fof_and_formula
-  = fof_unitary_formula "&" fof_unitary_formula
-  / fof_and_formula "&" fof_unitary_formula
+fof_or_formula = ( fof_unitary_formula vline ) + fof_unitary_formula
+fof_and_formula = ( fof_unitary_formula "&" ) + fof_unitary_formula
 fof_unitary_formula
   = fof_quantified_formula
   / fof_unary_formula
