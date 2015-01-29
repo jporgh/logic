@@ -1,9 +1,5 @@
-(* definition of a function with nested recursion using an ad hoc predicate
-   see:
-     Chapter 15 (General Recursion) of Coq'Art
-*)
-
 Require Import Div2.
+Require Import Omega.
 
 Inductive nestedRel : nat -> nat -> Prop :=
 | nestedRel_1 :
@@ -26,7 +22,6 @@ end.
 match goal with
 | H: nestedRel _ _ |- _ => induction H
 end.
-
 {
   inversion 1.
   reflexivity.
@@ -53,6 +48,16 @@ Inductive nestedDom : nat -> Prop :=
     nestedDom (div2 x + r) ->
     nestedDom (S x)
 .
+
+Hint Constructors nestedDom.
+
+Lemma nestedDom_complete : forall x y,
+  nestedRel x y ->
+  nestedDom x.
+Proof.
+intros x y H.
+induction H; eauto.
+Qed.
 
 Lemma nestedDom_inv1 : forall x : nat,
   nestedDom x ->
@@ -118,3 +123,54 @@ refine (
   eapply nestedRel_2; eassumption.
 }
 Defined.
+
+Lemma double_div2_le : forall x,
+  div2 x + div2 x <= x.
+Proof.
+intros x.
+pattern x.
+match goal with
+| |- ?P x => cut (P x /\ P (S x)); [tauto|]
+end.
+induction x; auto.
+split.
+{
+  tauto.
+}
+{
+  simpl.
+  omega.
+}
+Qed.
+
+Lemma nestedRel_le : forall x y,
+  nestedRel x y ->
+  y <= x.
+Proof.
+intros x y H.
+induction H; trivial.
+pose (double_div2_le x).
+omega.
+Qed.
+
+Lemma nestedDom_total: forall x,
+  nestedDom x.
+Proof.
+intros x.
+cut (forall y, y <= x -> nestedDom y); auto.
+induction x; intros y H.
+{
+  inversion_clear H.
+  trivial.
+}
+{
+  inversion_clear H; auto.
+  assert (H: nestedDom (div2 x)) by eauto using double_div2_le with arith.
+  destruct (nested _ H) as [x0].
+  apply nestedDom_2 with (r:=x0); try assumption.
+  match goal with H: _ |- _ => apply H; clear H end.
+  match goal with H: nestedRel _ _ |- _ => apply nestedRel_le in H end.
+  pose (double_div2_le x).
+  omega.
+}
+Qed.
