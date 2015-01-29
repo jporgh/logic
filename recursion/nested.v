@@ -1,3 +1,8 @@
+* definition of a function with nested recursion using an ad hoc predicate
+   see:
+     Chapter 15 (General Recursion) of Coq'Art
+*)
+
 Require Import Div2.
 Require Import Omega.
 
