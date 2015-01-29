@@ -1,6 +1,7 @@
 (* definition of walk with an ad hoc predicate
    see:
      Section 15.4 of Coq'Art
+     http://www.cse.chalmers.se/research/group/logic/TypesSS05/Extra/filliatre.pdf
    see also:
      http://www.irisa.fr/celtique/pichardie/papers/genfixpoint.pdf
      http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.105.8750
