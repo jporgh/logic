@@ -91,7 +91,7 @@ lemma div2odd:
   "odd m \<Longrightarrow> m = 2 * (m div 2) + 1"
 by (metis add.commute even_def mult.commute not_mod_2_eq_0_eq_1 semiring_div_class.mod_div_equality')
 
-lemma ZFC_extensionality:
+lemma ext_1:
  "\<forall>m. (\<forall>k. elem k m = elem k n) \<longrightarrow> m = n"
 apply (induct_tac "n" rule: ind_k2)
 apply simp_all
@@ -110,6 +110,14 @@ apply (metis Suc_eq_plus1 elem2k elem2k1 even_mult_two_ex)
 apply (insert elem2k1 elemSuc)
 apply auto
 by (metis Suc_eq_plus1 diff_Suc_1 elemSuc monoid_add_class.add.left_neutral old.nat.distinct(2))
+
+lemma elem_ext:
+ "(\<forall>k. elem k m = elem k n) \<Longrightarrow> m = n"
+by (metis (poly_guards_query) ext_1)
+
+lemma ZFC_extensionality:
+ "\<forall>m n. (\<forall>k. elem k m = elem k n) \<longrightarrow> m = n"
+by (metis (poly_guards_query) elem_ext)
 
 lemma ZFC_null_set:
   "\<exists>x. \<not> (\<exists>k. elem k x)"
@@ -348,7 +356,6 @@ fun elem_map_1 :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> nat \
 definition elem_map :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> nat" where
  "elem_map P n \<equiv> elem_map_1 P n n"
 
-
 lemma elem_elem_map_1:
  "!k n. elem k (elem_map_1 P n m) = (\<exists>x. elem x n \<and> x \<le> m \<and> P x = k)"
 apply (induct_tac "m")
@@ -382,5 +389,261 @@ lemma ZFC_replacement:
 apply clarify
 apply (rule_tac x="img P w" in exI)
 by (simp add: elem_img)
+
+lemma notempty_1:
+ "n \<noteq> 0 \<Longrightarrow> \<exists>x. elem x n"
+by (metis null_ext)
+
+lemma notempty_4:
+ "((na::nat) - 2 * 2 ^ n) div 2 = (na div 2) - 2 ^ n"
+by simp
+
+lemma notempty_3:
+ "\<forall>n. elem x n \<longrightarrow> \<not> elem x (n - 2 ^ x)"
+apply (induct_tac "x")
+apply (metis (poly_guards_query) Nat.add_diff_inverse div_by_1 elem_def elem_size even_sum_nat odd_1_nat power_0)
+apply simp
+by (metis notempty_4)
+
+lemma notempty_2:
+ "elem x n \<Longrightarrow> \<exists>y. \<not>elem x y \<and> n = union_sing x y"
+apply (simp add: union_sing_def)
+apply (rule_tac x="n - 2 ^ x" in exI)
+apply auto
+apply (metis notempty_3)
+by (metis Nat.add_diff_inverse comm_semiring_1_class.normalizing_semiring_rules(24) elem_size)
+
+lemma notempty:
+ "n \<noteq> 0 \<Longrightarrow> \<exists>x y. ~elem x y \<and> n = union_sing x y"
+by (metis (poly_guards_query) notempty_2 null_ext)
+
+lemma size_union_sing:
+ "\<not>elem x y \<Longrightarrow> y < union_sing x y"
+by (simp add: union_sing_def)
+
+lemma ind_sing:
+ "P 0 \<Longrightarrow> (\<And>n x. \<not>elem n x \<Longrightarrow> P x \<Longrightarrow> P (union_sing n x)) \<Longrightarrow> P (x::nat)"
+apply (induct_tac "x" rule: nat_less_induct)
+apply (case_tac "n = 0")
+apply simp
+apply (drule_tac notempty)
+apply clarify
+by (metis size_union_sing)
+
+definition power_set :: "nat \<Rightarrow> nat" where
+  "power_set x \<equiv> (\<Prod>k\<in>{m. elem m x}. 1 + 2 ^ 2 ^ k)"
+
+lemma power_set_zero:
+ "power_set 0 = 1"
+by (simp add: power_set_def null)
+
+lemma insert_union_sing:
+ "{m. elem m (union_sing n x)} = insert n {m. elem m x}"
+apply (simp add: elem_union_sing)
+by auto
+
+lemma finite_elem:
+ "finite {m. elem m x}"
+apply (subgoal_tac "finite {..<x}")
+apply (erule rev_finite_subset)
+apply auto
+by (metis elem_size_3)
+
+lemma power_set_union_sing:
+  "\<not> elem n x \<Longrightarrow> power_set (union_sing n x) = power_set x * (1 + 2 ^ (2 ^ n))"
+apply (simp add: power_set_def insert_union_sing)
+apply (subst Groups_Big.comm_monoid_mult_class.setprod.insert_remove)
+apply (metis finite_elem)
+by simp
+
+lemma union_sing_swap:
+  "union_sing x (union_sing x1 y1) = union_sing x1 (union_sing x y1)"
+apply (rule elem_ext)
+by (metis elem_union_sing)
+
+lemma notempty_max:
+ "n \<noteq> 0 \<Longrightarrow> \<exists>x y. (\<forall>z. elem z y \<longrightarrow> z < x) \<and> n = union_sing x y"
+apply (induction "n" rule: nat_less_induct)
+apply (drule_tac notempty)
+apply clarify
+apply (case_tac " \<forall>z. elem z y \<longrightarrow> z < x")
+apply auto[1]
+apply auto
+apply (subgoal_tac "\<exists>x1 y1. (\<forall>z. elem z y1 \<longrightarrow> z < x1) \<and> y = union_sing x1 y1")
+apply clarify
+apply (rule_tac x = "x1" in exI)
+apply (rule_tac x = "union_sing x y1" in exI)
+apply safe
+apply (simp add: elem_union_sing)
+apply auto[1]
+apply (metis union_sing_swap)
+apply (subgoal_tac "y \<noteq> 0")
+apply (subgoal_tac "y < union_sing x y")
+apply auto[1]
+apply (rule size_union_sing)
+apply simp
+apply (rule ccontr)
+by (simp add: null)
+
+lemma ind_sing_max:
+ "P 0 \<Longrightarrow> (\<And>n x. (!y. elem y x \<longrightarrow> y < n) \<Longrightarrow> P x \<Longrightarrow> P (union_sing n x)) \<Longrightarrow> P (x::nat)"
+apply (induct_tac "x" rule: nat_less_induct)
+apply (case_tac "n = 0")
+apply simp
+apply (drule_tac notempty_max)
+apply clarify
+by (metis less_not_refl size_union_sing)
+
+lemma elem_power_set_2:
+  "elem n (k + 2 ^ n) \<Longrightarrow> elem w (k + 2 ^ n) \<Longrightarrow> \<not> elem w k \<Longrightarrow> w = n"
+by (metis add_diff_cancel_right' elem_union_sing notempty_3 union_sing_def)
+
+lemma elem_power_set_1:
+  "elem n k \<Longrightarrow> elem w k \<Longrightarrow> \<not> elem w (k - 2 ^ n) \<Longrightarrow> w = n"
+by (metis add.commute elem_power_set_2 elem_size_2 le_add_diff_inverse)
+
+lemma power_set_size_2:
+ "(z::nat) \<le> 2 ^ x \<Longrightarrow> x \<le> m \<Longrightarrow> z \<le> 2 ^ m"
+apply (induction "z")
+apply auto
+by (metis Suc_1 le_antisym lessI not_less_eq_eq power_increasing_iff)
+
+lemma power_set_size_1:
+  "x \<le> 2 ^ n \<Longrightarrow>
+   (z::nat) \<le> 2 ^ x \<Longrightarrow>
+   z * (1 + 2 ^ 2 ^ n) \<le> (1 + z) * 2 ^ 2 ^ n"
+by (auto simp add: power_set_size_2)
+
+lemma power_set_size_4:
+ "(z::nat) \<le> x \<Longrightarrow>
+  b \<le> (1+z) * a \<Longrightarrow>
+  b \<le> (1+x) * a"
+proof -
+  assume a1: "b \<le> (1 + z) * a"
+  assume a2: "z \<le> x"
+  have "\<And>x\<^sub>1. b \<le> x\<^sub>1 + a * (1 + z)" using a1 by (simp add: mult.commute trans_le_add2)
+  thus "b \<le> (1 + x) * a" using a2 by (metis Nat.le_iff_add add.assoc add.commute distrib_left mult.commute)
+qed
+
+lemma power_set_size_3:
+ "(z::nat) \<le> 2 ^ x \<Longrightarrow>
+   x  \<le> 2 ^ n \<Longrightarrow>
+   z * (1 + 2 ^ 2 ^ n) \<le> (1 + 2 ^ x) * 2 ^ 2 ^ n"
+by (metis power_set_size_1 power_set_size_4)
+
+lemma elem_size_bound:
+ "!n. (\<forall>y. elem y x \<longrightarrow> y < n) \<longrightarrow>
+      x + 1 \<le> 2 ^ n"
+apply (induct_tac "x" rule: ind_div2)
+apply auto
+apply (subst (asm) elemSuc[symmetric])
+apply (case_tac "na")
+apply auto
+apply (metis null_ext)
+apply (subgoal_tac "2 * Suc (n div 2) \<le> 2 * 2 ^ nat")
+apply simp
+apply (subst (asm) elemSuc[symmetric])
+by (metis Suc_less_eq mult_le_cancel1)
+
+lemma power_set_size:
+ "power_set x + 1 \<le> 2 ^ (x + 1)"
+apply (induct_tac "x" rule: ind_sing_max)
+apply (simp add: power_set_zero)
+apply (subst power_set_union_sing)
+apply auto[1]
+apply (subgoal_tac "x + 1 \<le> 2 ^ n")
+apply (drule power_set_size_3)
+apply assumption
+apply (auto simp add: union_sing_def)
+apply (metis (erased, hide_lams) Suc_eq_plus1 add.assoc add.left_commute comm_semiring_1_class.normalizing_semiring_rules(24) mult_Suc_right power_Suc power_add)
+by (metis Suc_eq_plus1 elem_size_bound)
+
+lemma elem_mul_2k:
+ "elem k (s * 2 ^ n) \<Longrightarrow> elem (k - n) s"
+by (metis elem_pair_4x monoid_add_class.add.left_neutral mult_0_right neq0_conv null)
+
+lemma div_pow_minus:
+ "\<And>x. (x::nat) \<le> (k::nat) \<Longrightarrow> (2::nat) ^ k div 2 ^ x = 2 ^ (k - x)"
+apply (induction "k")
+apply auto
+apply (case_tac "x")
+by auto
+
+
+lemma div_pow_minus_mult:
+ "\<And>x. (x::nat) \<le> (k::nat) \<Longrightarrow> s * (2::nat) ^ k div 2 ^ x = s * 2 ^ (k - x)"
+apply (induction "k")
+apply auto
+apply (case_tac "x")
+by auto
+
+lemma size_mul_2k:
+ "elem x (m * 2 ^ k) \<Longrightarrow> k \<le> x"
+apply (rule ccontr)
+apply (simp add: elem_def)
+apply (subst (asm) div_pow_minus_mult)
+by auto
+
+lemma mul_2k:
+  "!w. elem w x \<longrightarrow> \<not> elem k w \<Longrightarrow>
+   x * 2 ^ 2 ^ k = elem_map (union_sing k) x"
+apply (rule elem_ext)
+apply (simp add: elem_elem_map)
+apply auto
+apply (rule_tac x = "ka - 2 ^ k" in exI)
+apply rule
+apply (metis elem_mul_2k)
+apply (simp add: union_sing_def)
+apply auto
+apply (metis elem_mul_2k)
+apply (metis comm_semiring_1_class.normalizing_semiring_rules(24) le_add_diff_inverse size_mul_2k)
+apply (subst elem_minus[symmetric])
+apply (metis elem_size_2 elem_union_sing_1)
+by (metis add_diff_cancel_right' union_sing_def)
+
+lemma not_odd_div:
+ "\<not>(odd n \<and> odd m) \<Longrightarrow> (n + m) div 2 = (n div 2) + (m div 2)"
+apply (subgoal_tac "\<And>m n. even m \<Longrightarrow> (n + m) div 2 = n div 2 + m div 2")
+apply auto[1]
+apply (metis add.commute)
+by (metis add.commute div2even div_by_0 div_mult_self2 monoid_add_class.add.right_neutral)
+
+lemma disjunct_union:
+ "\<And>k n. \<forall>x. elem x m \<longrightarrow> \<not> elem x n \<Longrightarrow>
+      elem k (m + n) = (elem k m \<or> elem k n)"
+apply (induction "m" rule: ind_div2)
+apply (metis monoid_add_class.add.left_neutral null)
+apply (case_tac "k")
+apply clarify
+apply (metis div_by_1 elem_def even_sum_nat power_0)
+apply clarify
+apply simp
+apply (subst not_odd_div)
+apply (metis div_by_1 elem_def power_0)
+apply (subgoal_tac " \<forall>x. elem x (n div 2) \<longrightarrow> \<not> elem x (na div 2)")
+apply auto
+by (metis elemSuc)
+
+lemma elem_power_set:
+ "!k. elem k (power_set n) = (\<forall>w. elem w k \<longrightarrow> elem w n)"
+apply (induct_tac "n" rule: ind_sing_max)
+apply (metis elem_pair_1 null null_ext power_0 power_set_zero zero_neq_one)
+apply clarify
+apply (subst power_set_union_sing)
+apply auto[1]
+apply simp
+apply (subst mul_2k)
+apply auto[1]
+apply (subst disjunct_union)
+apply (metis elem_elem_map elem_union_sing_1 less_not_refl)
+apply (simp add: elem_elem_map)
+apply auto
+apply (metis elem_union_sing)
+apply (metis elem_union_sing)
+by (metis elem_union_sing notempty_2)
+
+lemma ZFC_power_set:
+ "\<forall>x. \<exists>y. \<forall>z. elem z y = (\<forall>w. elem w z \<longrightarrow> elem w x)"
+by (metis (poly_guards_query) elem_power_set)
 
 end
