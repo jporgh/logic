@@ -801,4 +801,44 @@ apply (rule_tac x = "choice x" in exI)
 apply (rule elem_choice)
 by metis
 
+definition TC :: "nat \<Rightarrow> nat" where
+ "TC x \<equiv> (2 ^ ((max_elem x) + 1)) - 1"
+
+lemma pow_pre:
+ "(((2::nat) ^ (Suc n))- 1) div 2 = (2 ^ (n::nat)) - 1"
+by simp
+
+lemma elem_pow_pre:
+ "\<forall>x. elem x (2 ^ n - 1) = (x < n)"
+apply (induct_tac "n")
+apply (metis diff_self_eq_0 not_less0 null power_0)
+apply clarify
+apply (case_tac "x")
+apply (simp add: elemZero)
+apply clarify
+apply (subst elemSuc)
+by (metis Suc_less_eq pow_pre)
+
+lemma elem_TC:
+ "elem x (TC y) = (x \<le> max_elem y)"
+by (metis Suc_eq_plus1 TC_def elem_pow_pre not_less not_less_eq_eq)
+
+lemma TC_transitive:
+ "elem z y \<Longrightarrow> elem y (TC x) \<Longrightarrow> elem z (TC x)"
+apply (subst elem_TC)
+apply (subgoal_tac "z < y")
+apply (auto simp add: elem_size_3)
+by (metis Suc_leD Suc_leI elem_TC elem_size_3 le_trans)
+
+lemma TC_closure:
+ "elem z x \<Longrightarrow> elem z (TC x)"
+by (metis elem_TC max_elem_max)
+
+lemma ZFC_TC:
+ "\<forall>x. \<exists>u. (\<forall>w. elem w x \<longrightarrow> elem w u) \<and>
+          (\<forall>y z. elem z y \<and> elem y u \<longrightarrow> elem z u)"
+apply rule
+apply (rule_tac x = "TC x" in exI)
+by (metis TC_closure TC_transitive)
+
 end
