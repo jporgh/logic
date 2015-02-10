@@ -646,4 +646,70 @@ lemma ZFC_power_set:
  "\<forall>x. \<exists>y. \<forall>z. elem z y = (\<forall>w. elem w z \<longrightarrow> elem w x)"
 by (metis (poly_guards_query) elem_power_set)
 
+definition set_filter :: "(nat \<Rightarrow> bool) \<Rightarrow> nat \<Rightarrow> nat" where
+ "set_filter P n \<equiv> (elem_map (\<lambda> k. if P k then Suc k else 0) n) div 2"
+
+lemma elem_set_filter:
+ "elem k (set_filter P n) = (P k \<and> elem k n)"
+apply (simp add: set_filter_def)
+apply (subst elemSuc[symmetric])
+apply (subst elem_elem_map)
+by auto
+
+definition set_diff :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+ "set_diff m n \<equiv> set_filter (\<lambda> k. \<not> elem k n) m"
+
+lemma elem_set_diff:
+ "elem k (set_diff m n) = (elem k m \<and> \<not> elem k n)"
+by (metis elem_set_filter set_diff_def)
+
+definition set_intersect :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+ "set_intersect m n \<equiv> set_diff m (set_diff m n)"
+
+lemma elem_set_intersect:
+ "elem k (set_intersect m n) = (elem k m \<and> elem k n)"
+by (metis (poly_guards_query) elem_set_diff set_intersect_def)
+
+definition set_union :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+ "set_union m n \<equiv> (set_diff m n) + n"
+
+lemma elem_set_union:
+  "elem k (set_union m n) = (elem k m \<or> elem k n)"
+apply (simp add: set_union_def)
+apply (subst disjunct_union)
+apply (metis elem_set_diff)
+by (metis elem_set_diff)
+
+fun sum_set_1 :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+ "sum_set_1 n 0 = 0" |
+ "sum_set_1 n (Suc m) = (let r = sum_set_1 n m in
+                      if elem (Suc m) n
+                      then set_union (Suc m) r
+                      else r)"
+
+definition sum_set :: "nat \<Rightarrow> nat" where
+ "sum_set n \<equiv> sum_set_1 n n"
+
+lemma elem_sum_set_1:
+ "!k n. elem k (sum_set_1 n m) = (\<exists>x. elem x n \<and> x \<le> m \<and> elem k x)"
+apply (induct_tac "m")
+apply (simp add: elem_union_sing)
+apply (metis null)
+apply (intro allI)
+apply (simp del: elemSuc)
+apply (case_tac "elem (Suc n) na")
+apply (simp del: elemSuc add: elem_set_union)
+apply (auto simp del: elemSuc)
+apply (metis le_Suc_eq)
+by (metis le_Suc_eq)
+
+lemma elem_sum_set:
+ "elem k (sum_set n) = (\<exists>x. elem x n \<and> elem k x)"
+apply (simp add: sum_set_def)
+by (metis (poly_guards_query) Suc_leI Suc_le_mono elem_sum_set_1 elem_size_3 le_Suc_eq)
+
+lemma ZFC_sum_set:
+ "\<forall>x. \<exists>y. \<forall>u. elem u y = (\<exists>z. elem z x \<and> elem u z)"
+by (metis elem_sum_set)
+
 end
