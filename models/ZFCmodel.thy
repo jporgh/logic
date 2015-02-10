@@ -712,4 +712,93 @@ lemma ZFC_sum_set:
  "\<forall>x. \<exists>y. \<forall>u. elem u y = (\<exists>z. elem z x \<and> elem u z)"
 by (metis elem_sum_set)
 
+lemma disjoint_intersect:
+ "(set_intersect v u = 0) = (\<not>(\<exists>w. elem w v \<and> elem w u))"
+by (metis elem_set_intersect null null_ext)
+
+lemma set_intersect_sym:
+ "set_intersect u v = set_intersect v u"
+by (metis elem_set_intersect elem_ext)
+
+lemma notempty_eqv:
+ "(n \<noteq> 0) = (\<exists>w. elem w n)"
+by (metis null null_ext)
+
+fun max_elem_1 :: "nat => nat => nat" where
+ "max_elem_1 m 0 = 0" |
+ "max_elem_1 m (Suc n) = (if elem (Suc n) m
+                          then (Suc n)
+                          else max_elem_1 m n)"
+
+definition max_elem :: "nat \<Rightarrow> nat" where
+ "max_elem m \<equiv> max_elem_1 m m"
+
+lemma elem_max_elem_1:
+ "(\<exists>x. elem x m \<and> x \<le> k) \<Longrightarrow>
+  elem (max_elem_1 m k) m"
+apply (induction "k")
+apply simp
+by (metis le_Suc_eq max_elem_1.simps(2))
+
+lemma max_elem_1_max:
+ "elem w m \<Longrightarrow>
+  w \<le> k \<Longrightarrow>
+  w \<le> max_elem_1 m k"
+apply (induction "k")
+apply simp
+by (metis le_Suc_eq max_elem_1.simps(2))
+
+lemma elem_max_elem:
+ "m \<noteq> 0 \<Longrightarrow>
+  elem (max_elem m) m"
+apply (subst (asm) notempty_eqv)
+apply (simp add:  max_elem_def)
+apply clarify
+by (metis (poly_guards_query) Suc_leI Suc_le_mono elem_max_elem_1 elem_size_3 le_Suc_eq)
+
+lemma max_elem_max:
+ "elem w m \<Longrightarrow> w \<le> max_elem m"
+by (metis Suc_leD Suc_leI elem_size_3 max_elem_1_max max_elem_def)
+
+definition choice :: "nat \<Rightarrow> nat" where
+ "choice m \<equiv> elem_map max_elem m"
+
+lemma elem_choice_1:
+ "\<forall>u. elem u x \<longrightarrow>
+           (\<exists>w. elem w u) \<and>
+           (\<forall>v. elem v x \<and> v \<noteq> u \<longrightarrow> (\<forall>w. elem w v \<longrightarrow> \<not> elem w u)) \<Longrightarrow>
+       elem u x \<Longrightarrow>
+       elem (max_elem w) u \<Longrightarrow> elem w x \<Longrightarrow> w = u"
+apply (subgoal_tac "elem (max_elem w) w")
+apply auto[1]
+by (metis elem_max_elem null)
+
+lemma elem_choice:
+ " (\<forall>u. elem u x \<longrightarrow>
+            (\<exists>w. elem w u) \<and>
+            (\<forall>v. elem v x \<and> v \<noteq> u \<longrightarrow> \<not> (\<exists>w. elem w v \<and> elem w u))) \<Longrightarrow>
+        (\<forall>u. elem u x \<longrightarrow> (\<exists>!w. elem w u \<and> elem w (choice x)))"
+apply (simp add: choice_def elem_elem_map)
+apply safe
+apply (metis (poly_guards_query) elem_max_elem_1 elem_size_3 max_elem_def nat_le_linear not_less)
+apply (subgoal_tac "xa = u")
+apply (subgoal_tac "xaa = u")
+apply simp
+apply (erule elem_choice_1)
+apply simp
+apply simp
+apply simp
+apply (erule elem_choice_1)
+by simp
+
+lemma ZFC_CAC:
+ " \<forall>x. (\<forall>u. elem u x \<longrightarrow>
+            (\<exists>w. elem w u) \<and>
+            (\<forall>v. elem v x \<and> v \<noteq> u \<longrightarrow> \<not> (\<exists>w. elem w v \<and> elem w u))) \<longrightarrow>
+        (\<exists>y. \<forall>u. elem u x \<longrightarrow> (\<exists>!w. elem w u \<and> elem w y))"
+apply (intro allI impI)
+apply (rule_tac x = "choice x" in exI)
+apply (rule elem_choice)
+by metis
+
 end
